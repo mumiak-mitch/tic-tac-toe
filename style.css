@@ -1,0 +1,149 @@
+*, *::after, *::before {
+    box-sizing: border-box;
+}
+
+:root {
+    --box-size: 100px;
+    --mark-size: calc(var(--box-size) * .9);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.game-board {
+    margin-top: 150px;
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    justify-items: center;
+    grid-template-columns: repeat(3, auto);
+}
+
+.box {
+    height: var(--box-size);
+    width: var(--box-size);
+    background: white;
+    border: 5px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.box:first-child,
+.box:nth-child(2),
+.box:nth-child(3) {
+    border-top: none;
+}
+
+.box:nth-child(3n + 1) {
+    border-left: none;
+}
+
+.box:nth-child(3n + 3) {
+    border-right: none;
+}
+
+.box:last-child,
+.box:nth-child(8),
+.box:nth-child(7) {
+    border-bottom: none;
+}
+
+.box.x,    
+.box.o {
+    cursor: not-allowed;
+}
+
+.game-board.x .box:not(.x):not(.o):hover::before,
+.game-board.x .box:not(.x):not(.o):hover::after,
+.game-board.o .box:not(.x):not(.o):hover::before,
+.game-board.o .box:not(.x):not(.o):hover::after {
+    background: lightgray;
+}
+
+.box.x::before,
+.box.x::after,
+.box.o::before,
+.box.o::after {
+    background: black;
+}
+
+.box.x::before,
+.box.x::after,
+.game-board.x .box:not(.x):not(.o):hover::before,
+.game-board.x .box:not(.x):not(.o):hover::after {
+    content: '';
+    position: absolute;
+    width: calc(var(--mark-size) * .15);
+    height: var(--mark-size);
+}
+
+.box.x::before,
+.game-board.x .box:not(.x):not(.o):hover::before {
+    transform: rotate(45deg);
+}
+
+.box.x::after,
+.game-board.x .box:not(.x):not(.o):hover::after {
+    transform: rotate(-45deg);
+}
+
+.box.o::before,
+.box.o::after,
+.game-board.o .box:not(.x):not(.o):hover::before,
+.game-board.o .box:not(.x):not(.o):hover::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+}
+
+.box.o::before,
+.game-board.o .box:not(.x):not(.o):hover::before {
+    width: var(--mark-size);
+    height: var(--mark-size);
+}
+
+.box.o::after,
+.game-board.o .box:not(.x):not(.o):hover::after {
+    width: calc(var(--mark-size) * .7);
+    height: calc(var(--mark-size) * .7);
+    background: white;
+}
+
+.winner-section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, .7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 5rem;
+    flex-direction: column;
+    display: none;
+}
+
+.winner-section button {
+    font-size: 3rem;
+    background: white;
+    border: none;
+    padding: .25em .5em;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+.winner-section button:hover {
+    background: gray;
+    color: white;
+}
+
+.winner-section.show {
+    display: flex;
+}

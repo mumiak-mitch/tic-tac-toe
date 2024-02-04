@@ -1,187 +1,100 @@
-// Module pattern for encapsulation
-const gameBoard = (() => {
-    const board = ["", "", "", "", "", "", "", "", ""];
+const x_turn = "x";
+const o_turn = "o";
+const boxElements = document.querySelectorAll('[data-cell]');
+const gameBoard = document.getElementById('game-board');
+const winning_data = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+];
+const winningMessage = document.querySelector('[data-winning-message-text]');
+const winningMessageElement = document.getElementById("winningSection");
+const restartBtn = document.getElementById("restartBtn");
 
-    const getBoard = () => [...board];
+let oTurn;
 
-    const makeMove = (index, marker) => {
-        if (board[index] === "") {
-            board[index] = marker;
-            return true; // Move successful
-        }
-        return false; // Invalid move
-    };
+startGame();
+restartBtn.removeEventListener("click", startGame);
+restartBtn.addEventListener("click", startGame);
 
-    const isGameOver = () => {
-        // Check for winning conditions
-        if (
-            (board[0] === board[1] && board[1] === board[2] && board[0] !== "") ||
-            (board[3] === board[4] && board[4] === board[5] && board[3] !== "") ||
-            (board[6] === board[7] && board[7] === board[8] && board[6] !== "") ||
-            (board[0] === board[3] && board[3] === board[6] && board[0] !== "") ||
-            (board[1] === board[4] && board[4] === board[7] && board[1] !== "") ||
-            (board[2] === board[5] && board[5] === board[8] && board[2] !== "") ||
-            (board[0] === board[4] && board[4] === board[8] && board[0] !== "") ||
-            (board[2] === board[4] && board[4] === board[6] && board[2] !== "")
-        ) {
-            return true; // Game over - someone has won
-        }
+function startGame() {
+    oTurn = false;
 
-        // Check for ties
-        if (!board.includes("")) {
-            return true; // Game over - it's a tie
-        }
+    boxElements.forEach(box => {
+        box.classList.remove(x_turn);
+        box.classList.remove(o_turn);
+        box.removeEventListener('click', handleClick);
+        box.addEventListener('click', handleClick, { once: true });
+    });
 
-        return false; // Game is still ongoing
-    };
+    setBoardHover();
 
-    const resetBoard = () => {
-        board.fill("");
-    };
+    winningMessageElement.classList.remove('show');
+}
 
-    return {
-        getBoard,
-        makeMove,
-        isGameOver,
-        resetBoard,
-    };
-})();
+function handleClick(e) {
+    const box = e.target;
+    const currentTurn = oTurn ? o_turn : x_turn;
 
-const playerFactory = (name, marker) => {
-    const getName = () => name;
-    const getMarker = () => marker;
+    if (checkWinner(currentTurn)) {
+        endGame(false);
+    } else if (isDraw()) {
+        endGame(true);
+    } else {
+        switchTurns();
+        setBoardHover();
+    }
 
-    return {
-        getName,
-        getMarker,
-    };
-};
+    placeMark(box, currentTurn);
+}
 
-const gameController = (() => {
-    let humanPlayer;
-    let computerPlayer;
-    let currentPlayer;
+function placeMark(box, currentTurn) {
+    box.classList.add(currentTurn);
+}
 
-    const startGame = (humanName) => {
-        humanPlayer = playerFactory(humanName, "X");
-        computerPlayer = playerFactory("Computer", "O");
-        currentPlayer = humanPlayer;
-        playComputerTurn(); // Computer makes the first move
-    };
+function switchTurns() {
+    oTurn = !oTurn;
+}
 
-    const switchPlayer = () => {
-        currentPlayer = currentPlayer === humanPlayer ? computerPlayer : humanPlayer;
-        if (currentPlayer === computerPlayer) {
-            playComputerTurn();
-        }
-    };
+function setBoardHover() {
+    gameBoard.classList.remove(x_turn);
+    gameBoard.classList.remove(o_turn);
 
-    const resetGame = () => {
-        gameBoard.resetBoard();
-        humanPlayer = null;
-        computerPlayer = null;
-        currentPlayer = null;
-    };
+    if (oTurn) {
+        gameBoard.classList.add(o_turn);
+    } else {
+        gameBoard.classList.add(x_turn);
+    }
+}
 
-    const playComputerTurn = () => {
-        if (!gameBoard.isGameOver() && currentPlayer === computerPlayer) {
-            const emptyCells = gameBoard.getBoard().reduce((acc, cell, index) => {
-                if (cell === "") {
-                    acc.push(index);
-                }
-                return acc;
-            }, []);
-
-            if (emptyCells.length > 0) {
-                const randomIndex = Math.floor(Math.random() * emptyCells.length);
-                const computerMove = emptyCells[randomIndex];
-                setTimeout(() => {
-                    gameBoard.makeMove(computerMove, computerPlayer.getMarker());
-                    displayController.renderBoard();
-                    if (gameBoard.isGameOver()) {
-                        displayController.showResult();
-                    } else {
-                        switchPlayer();
-                    }
-                }, 1000); // Introduce delay for a more natural feel
-            }
-        }
-    };
-
-    return {
-        startGame,
-        switchPlayer,
-        resetGame,
-    };
-})();
-
-const displayController = (() => {
-    const boardContainer = document.getElementById("game-board");
-    const playerInput = document.getElementById("player");
-    const startButton = document.getElementById("start-game");
-    const resultDisplay = document.getElementById("result-display");
-
-    const renderBoard = () => {
-        boardContainer.innerHTML = "";
-
-        const currentBoard = gameBoard.getBoard();
-
-        currentBoard.forEach((cell, index) => {
-            const cellElement = document.createElement("div");
-            cellElement.textContent = cell;
-            cellElement.addEventListener("click", () => handleCellClick(index));
-            boardContainer.appendChild(cellElement);
+function checkWinner(currentTurn) {
+    return winning_data.some(winning => {
+        return winning.every(index => {
+            return boxElements[index].classList.contains(currentTurn);
         });
-    };
+    });
+}
 
-    const handleCellClick = (index) => {
-        if (!gameBoard.isGameOver() && currentPlayer === humanPlayer && gameBoard.makeMove(index, humanPlayer.getMarker())) {
-            renderBoard();
-            if (gameBoard.isGameOver()) {
-                showResult();
-            } else {
-                gameController.switchPlayer();
-                playComputerTurn(); // Ensure computer plays after human's move
-            }
-        }
-    };
+function endGame(draw) {
+    if (draw) {
+        winningMessage.innerText = `Draw!!!`;
+        winningMessageElement.classList.add('show');
+    } else {
+        winningMessage.innerText = `${oTurn ? "O's Win" : "X's Win"}`;
+        winningMessageElement.classList.add('show');
+        restartBtn.removeEventListener("click", startGame);
+        restartBtn.addEventListener("click", () => {
+            winningMessageElement.classList.remove('show');
+            startGame();
+        });
+    }
+}
 
-    const showResult = () => {
-        const winner = determineWinner();
-        if (winner) {
-            resultDisplay.textContent = `${winner.getName()} wins!`;
-        } else {
-            resultDisplay.textContent = "It's a tie!";
-        }
-    };
-
-    const determineWinner = () => {
-        if (gameBoard.isGameOver()) {
-            return currentPlayer === humanPlayer ? computerPlayer : humanPlayer;
-        }
-        return null;
-    };
-
-    const startGame = () => {
-        const playerName = playerInput.value.trim() || "Player";
-        gameController.startGame(playerName);
-        renderBoard();
-        resultDisplay.textContent = "";
-    };
-
-    const resetGame = () => {
-        gameController.resetGame();
-        playerInput.value = "";
-        renderBoard();
-        resultDisplay.textContent = "";
-    };
-
-    // Event listeners
-    startButton.addEventListener("click", startGame);
-
-    return {
-        renderBoard,
-        showResult,
-        resetGame,
-    };
-})();
+function isDraw() {
+    return ![...boxElements].some(box => box.classList.contains(x_turn) || box.classList.contains(o_turn)) && ![...boxElements].some(box => !box.classList.contains(x_turn) && !box.classList.contains(o_turn));
+}
